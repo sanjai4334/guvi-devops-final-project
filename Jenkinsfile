@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git credentialsId: 'github-seccred', url: 'https://github.com/sanjai4334/guvi-devops-final-project.git', branch: 'main'
+                git url: 'https://github.com/sanjai4334/guvi-devops-final-project.git', branch: 'main'
             }
         }
 

@@ -4,6 +4,7 @@ pipeline {
     environment {
         // 🔹 Change These Values for Different Projects 🔹
         REPO_URL = 'https://github.com/sanjai4334/guvi-devops-final-project.git'  // GitHub repository URL
+        REPO_BRANCH = 'main' // Github repository branch
         DOCKER_IMAGE_NAME = 'guvi-devops-final-project'  // Docker image name (without username)
         DOCKER_CREDENTIALS_ID = 'docker-seccred'  // Jenkins credential ID for Docker Hub
     }
@@ -11,7 +12,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git REPO_URL
+                git branch:REPO_BRANCH, url:REPO_URL
             }
         }
 

@@ -48,16 +48,10 @@ pipeline {
         }
 
         stage('Deploy on Minikube') {
-        steps {
-            withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                sh '''
-                export DOCKER_USERNAME=$DOCKER_USERNAME
-                envsubst < deployment.yaml > deployment-final.yaml
-                kubectl apply -f deployment-final.yaml
-                '''
+            steps {
+                sh "kubectl apply -f deployment.yaml"
             }
         }
-    }
-
+        
     }
 }

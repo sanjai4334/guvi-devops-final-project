@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: guvi-devops-final-project-container
-          image: ${DOCKER_USERNAME}/guvi-devops-final-project:latest
+          image: sanjai4334/guvi-devops-final-project:latest
           ports:
             - containerPort: 5714
 ---

@@ -43,6 +43,7 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    export KUBECONFIG=/var/lib/jenkins/.kube/config
                     kubectl delete deployment guvi-devops-final || true
                     kubectl create deployment guvi-devops-final --image=$DOCKER_HUB_REPO:latest
                     kubectl expose deployment guvi-devops-final --type=NodePort --port=80

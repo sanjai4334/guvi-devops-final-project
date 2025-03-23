@@ -2,67 +2,62 @@ pipeline {
     agent any
 
     environment {
-        REPO_URL = 'https://github.com/sanjai4334/guvi-devops-final-project.git'
-        REPO_BRANCH = 'main'
-        DOCKER_IMAGE_NAME = 'guvi-devops-final-project'
         DOCKER_CREDENTIALS_ID = 'docker-seccred'
+        DOCKER_HUB_REPO = 'sanjai4334/guvi-devops-final-project'
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git branch:REPO_BRANCH, url:REPO_URL
-            }
-        }
-
-        stage('Clean Workspace') {
-            steps {
-                sh 'rm -rf node_modules build'
-            }
-        }
-
-        stage('Build React App') {
-            steps {
-                sh 'npm install'
-                sh 'npm run build'
+                git credentialsId: 'github-seccred', url: 'https://github.com/sanjai4334/guvi-devops-final-project.git', branch: 'main'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                    sh "docker build -t $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest ."
+                script {
+                    sh 'docker build -t $DOCKER_HUB_REPO:latest .'
                 }
             }
         }
 
         stage('Login to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                    sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
+                script {
+                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    }
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                    sh "docker push $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest"
+                script {
+                    sh 'docker push $DOCKER_HUB_REPO:latest'
                 }
             }
         }
 
-        stage('Deploy on Minikube') {
+        stage('Deploy to Minikube') {
             steps {
-                sh "kubectl config use-context minikube"
-                sh "kubectl apply -f deployment.yaml --validate=FALSE"
+                script {
+                    sh '''
+                    kubectl delete deployment guvi-devops-final || true
+                    kubectl create deployment guvi-devops-final --image=$DOCKER_HUB_REPO:latest
+                    kubectl expose deployment guvi-devops-final --type=NodePort --port=80
+                    '''
+                }
             }
         }
+    }
 
-        stage('Restart Deployment') {
-            steps {
-                sh "kubectl rollout restart deployment guvi-devops-final-project"
-            }
+    post {
+        success {
+            echo 'Deployment successful!'
+        }
+        failure {
+            echo 'Pipeline failed!'
         }
     }
 }

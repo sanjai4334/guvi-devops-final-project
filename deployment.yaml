@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: react-vite
-        image: sanjai4334/react-vite-app:latest
+        image: sanjai4334/guvi-devops-final-project:latest
         ports:
         - containerPort: 80
 ---

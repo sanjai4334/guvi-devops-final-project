@@ -2,17 +2,22 @@ pipeline {
     agent any
 
     environment {
-        // 🔹 Change These Values for Different Projects 🔹
-        REPO_URL = 'https://github.com/sanjai4334/guvi-devops-final-project.git'  // GitHub repository URL
-        REPO_BRANCH = 'main' // Github repository branch
-        DOCKER_IMAGE_NAME = 'guvi-devops-final-project'  // Docker image name (without username)
-        DOCKER_CREDENTIALS_ID = 'docker-seccred'  // Jenkins credential ID for Docker Hub
+        REPO_URL = 'https://github.com/sanjai4334/guvi-devops-final-project.git'
+        REPO_BRANCH = 'main'
+        DOCKER_IMAGE_NAME = 'guvi-devops-final-project'
+        DOCKER_CREDENTIALS_ID = 'docker-seccred'
     }
 
     stages {
         stage('Clone Repository') {
             steps {
                 git branch:REPO_BRANCH, url:REPO_URL
+            }
+        }
+
+        stage('Clean Workspace') {
+            steps {
+                sh 'rm -rf node_modules build'
             }
         }
 
@@ -49,9 +54,15 @@ pipeline {
 
         stage('Deploy on Minikube') {
             steps {
-                sh "kubectl apply -f deployment.yaml"
+                sh "kubectl config use-context minikube"
+                sh "kubectl apply -f deployment.yaml --validate=FALSE"
             }
         }
-        
+
+        stage('Restart Deployment') {
+            steps {
+                sh "kubectl rollout restart deployment guvi-devops-final-project"
+            }
+        }
     }
 }

@@ -16,7 +16,7 @@ spec:
         - name: guvi-devops-final-project-container
           image: sanjai4334/guvi-devops-final-project:latest
           ports:
-            - containerPort: 5714
+            - containerPort: 80  # Change this if needed
 ---
 apiVersion: v1
 kind: Service
@@ -28,5 +28,5 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 5714
+      targetPort: 80  # Should match containerPort
   type: NodePort

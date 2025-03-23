@@ -2,13 +2,16 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "sanjai4334/react-vite-app"
+        // 🔹 Change These Values for Different Projects 🔹
+        REPO_URL = 'https://github.com/sanjai4334/guvi-devops-final-project.git'  // GitHub repository URL
+        DOCKER_IMAGE_NAME = 'guvi-devops-final-project'  // Docker image name (without username)
+        DOCKER_CREDENTIALS_ID = 'docker-seccred'  // Jenkins credential ID for Docker Hub
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/sanjai4334/guvi-devops-final-project.git'
+                git REPO_URL
             }
         }
 
@@ -21,28 +24,39 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE:latest .'
+                withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh "docker build -t $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest ."
+                }
             }
         }
 
         stage('Login to Docker Hub') {
             steps {
-                withCredentials([string(credentialsId: 'docker-hub-credentials', variable: 'DOCKER_PASSWORD')]) {
-                    sh 'echo $DOCKER_PASSWORD | docker login -u sanjai4334 --password-stdin'
+                withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                sh 'docker push $DOCKER_IMAGE:latest'
+                withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh "docker push $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest"
+                }
             }
         }
 
         stage('Deploy on Minikube') {
-            steps {
-                sh 'kubectl apply -f deployment.yaml'
+        steps {
+            withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                sh '''
+                export DOCKER_USERNAME=$DOCKER_USERNAME
+                envsubst < deployment.yaml > deployment-final.yaml
+                kubectl apply -f deployment-final.yaml
+                '''
             }
         }
+    }
+
     }
 }

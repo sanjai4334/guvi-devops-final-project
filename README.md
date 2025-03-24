@@ -1,12 +1,114 @@
-# React + Vite
+# GUVI Deevops Final Project
+## CI/CD Pipeline for React App: Build, Push to Docker Hub, and Deploy on Minikube
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> [!NOTE]  
+> Make sure to change all the credentials and links to your own in all the files and commands.
 
-Currently, two official plugins are available:
+### Create react projejct
+```bash
+npm create vite@latest . -- --template react
+npm install
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Dockerfile
+```groovy
+# Use an official Node.js image to build the React app
+FROM node:18 as build
 
-## Expanding the ESLint configuration
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm install
+COPY . .
+RUN npm run build
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+# Use a lightweight web server for production
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### Jenkinsfile
+```groovy
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_CREDENTIALS_ID = 'docker-seccred'
+        DOCKER_HUB_REPO = 'sanjai4334/guvi-devops-final-project'
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git url: 'https://github.com/sanjai4334/guvi-devops-final-project.git', branch: 'main'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'docker build -t $DOCKER_HUB_REPO:latest .'
+                }
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    sh 'docker push $DOCKER_HUB_REPO:latest'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline succeeded!'
+            echo 'Docker image pushed to Docker Hub!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
+```
+
+ - Add these into the main repo folder and commit the changes
+
+## Install these plugins 
+ - ✅ Pipeline (Already included in newer Jenkins versions)
+ - ✅ Git Plugin (For cloning repositories)
+ - ✅ Docker Pipeline Plugin (For building & pushing Docker images)
+ - ✅ Kubernetes Plugin (For deploying to Minikube)
+ - ✅ Credentials Binding Plugin (For securely handling Docker Hub credentials)
+
+## Create a pipeline job to push the docker image to dockerhub
+ - Open Jenkins and create a pipeline job
+ - In the connfigure section : 
+    - In General section select `Discard old Builds` and set days to keep build and no of builds to keep as `2`
+ - Scroll down to `Pipeline` section :
+    - Select `Pipeline script from SCM`
+    - In `SCM` select `git` and paste your `Repository URL` and change the branch to `main`
+ - Click Save and then Build
+
+## Pull the image from Docker hub and run the build using Minikube
+ - Open your terminal and execute the following commands
+
+```bash
+minikube start
+kubectl create deployment guvi-devops-final --image=sanjai4334/guvi-devops-final-project:latest
+kubectl expose deployment guvi-devops-final --type=NodePort --port=80
+minikube service guvi-devops-final
+```

@@ -103,6 +103,8 @@ pipeline {
     - In `SCM` select `git` and paste your `Repository URL` and change the branch to `main`
  - Click Save and then Build
 
+![image](https://github.com/user-attachments/assets/875a758f-d546-4663-be6e-40e7ff6a1e02)
+
 ## Pull the image from Docker hub and run the build using Minikube
  - Open your terminal and execute the following commands
 
@@ -112,3 +114,5 @@ kubectl create deployment guvi-devops-final --image=sanjai4334/guvi-devops-final
 kubectl expose deployment guvi-devops-final --type=NodePort --port=80
 minikube service guvi-devops-final
 ```
+
+![image](https://github.com/user-attachments/assets/13abc9c0-38bb-48ac-8f19-6d43634bf387)
